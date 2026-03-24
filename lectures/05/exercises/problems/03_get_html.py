@@ -14,11 +14,20 @@ import requests
 
 URL = "https://example.com"
 
+def main():
+    
+    response = requests.get(URL, verify=False)
+    response.raise_for_status()  
 
-def main() -> None:
-    # TODO: implement GET request and print HTML response
-    pass
+    print("Status Code:", response.status_code)
+    print("Content-Type:", response.headers.get("Content-Type"))
 
+    
+    if "text/html" in response.headers.get("Content-Type", "").lower():
+        print("This is an HTML page.")
+
+    
+    print("\nHTML Body Preview:\n", response.text[:500], "...")
 
 if __name__ == "__main__":
     main()

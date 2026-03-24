@@ -16,13 +16,19 @@ import requests
 
 URL = "https://jsonplaceholder.typicode.com/posts"
 
+def main():
+    payload = {
+        "title": "My First Post",
+        "body": "Hello, this is a test post!",
+        "userId": 123
+    }
+    response = requests.post(URL, json=payload)
 
-def main() -> None:
-    # TODO: create payload dict
-    # TODO: send POST request with json=payload
-    # TODO: print response details
-    pass
+    print("Status Code:", response.status_code)
+    print("Raw Response Body:", response.text)
 
+    json_data = response.json()
+    print("Parsed JSON:", json_data)
 
 if __name__ == "__main__":
     main()

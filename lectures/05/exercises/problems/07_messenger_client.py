@@ -14,13 +14,43 @@ Partner setup:
 
 import requests
 
-TARGET_BASE_URL = "https://replace-with-partner-ngrok-url"
-SENDER_NAME = "replace-with-your-name"
+TARGET_BASE_URL = "https://ellipsoidal-cisternal-thi.ngrok-free.dev"
+SENDER_NAME = "Sai"
 
 
 def main() -> None:
-    # TODO: implement input loop and POST sending
-    pass
+    print("Messenger started. Type messages (Ctrl+C to stop)\n")
+
+    while True:
+        try:
+            text = input("You: ").strip()
+
+            if not text:
+                continue  
+
+            
+            payload = {
+                "sender": SENDER_NAME,
+                "text": text
+            }
+
+            
+            response = requests.post(
+                f"{TARGET_BASE_URL}/messages",
+                json=payload
+            )
+
+            response.raise_for_status()
+
+            print(f"Sent! Status: {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to send: {e}")
+
+        except KeyboardInterrupt:
+            print("\nExiting messenger...")
+            break
+    
 
 
 if __name__ == "__main__":

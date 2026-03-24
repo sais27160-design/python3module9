@@ -26,7 +26,7 @@ class Student(Base):
     track: Mapped[str] = mapped_column(String, nullable=False)
 
     # TODO: add relationship to Assignment
-    # assignments: Mapped[list["Assignment"]] = relationship(back_populates="student")
+    assignments: Mapped[list["Assignment"]] = relationship(back_populates="student")
 
 
 class Assignment(Base):
@@ -38,4 +38,4 @@ class Assignment(Base):
     student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), nullable=False)
 
     # TODO: add relationship back to Student
-    # student: Mapped[Student] = relationship(back_populates="assignments")
+    student: Mapped[Student] = relationship(back_populates="assignments")

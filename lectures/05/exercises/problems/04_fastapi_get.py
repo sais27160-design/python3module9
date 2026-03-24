@@ -15,5 +15,5 @@ app = FastAPI()
 
 @app.get("/")
 def root() -> dict[str, str]:
-    # TODO: return your health payload
-    raise NotImplementedError
+    return {"status": "ok", "service":"lecture-05"}
+#this got also have an error because file name start with number
