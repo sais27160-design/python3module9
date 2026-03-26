@@ -24,9 +24,8 @@ Optional:
 
 
 def main() -> None:
-    # TODO: run the steps from the docstring in sqlite_web.
+    
     print("Complete setup steps from this file docstring.")
-
 
 if __name__ == "__main__":
     main()

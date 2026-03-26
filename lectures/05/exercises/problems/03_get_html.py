@@ -16,7 +16,7 @@ URL = "https://example.com"
 
 def main():
     
-    response = requests.get(URL, verify=False)
+    response = requests.get(URL, verify=False) # i have an error with SSL certificate, so i need to disable
     response.raise_for_status()  
 
     print("Status Code:", response.status_code)

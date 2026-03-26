@@ -13,7 +13,7 @@ Starter:
 """
 
 from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session,joinedload
 
 from db_models import Assignment, Student
 
@@ -24,9 +24,11 @@ def main() -> None:
     engine = create_engine(DB_URL, echo=False)
 
     with Session(engine) as session:
+        # TODO 1: add an assignment for an existing student
         student = session.execute(select(Student)).scalars().first()
         if student:
             new_assignment = Assignment(
+                
                 title="Math Homework",
                 grade=95,
                 student_id=student.id
@@ -34,25 +36,25 @@ def main() -> None:
             session.add(new_assignment)
             print(f"Added assignment for student: {student.name}")
 
+        # TODO 2: read all students
         all_students = session.execute(select(Student)).scalars().all()
         print("\nAll students:")
         for s in all_students:
             print(f"{s.id} - {s.name}, age {s.age}")
 
+        # TODO 3: read filtered + sorted students
         filtered_students = session.execute(
-            select(Student).where(Student.age >= 22).order_by(desc(Student.age))
-        ).scalars().all()
+            select(Student).where(Student.age >= 22).order_by(desc(Student.age))).scalars().all()
         print("\nStudents aged 22 or older, sorted by age descending:")
         for s in filtered_students:
             print(f"{s.name} - {s.age}")
 
         # TODO 4: read assignments with student data
-        assignments = session.execute(
-            select(Assignment).options(joinedload(Assignment.student))
-        ).scalars().all()
-        print("\nAssignments with student names:")
-        for a in assignments:
-            print(f"{a.title} - {a.grade} (Student: {a.student.name})")
+        assignments = session.execute(select(Assignment, Student).join(Student)).all()
+
+        for assignment, student in assignments:
+            print(f"{assignment.title} - {assignment.grade} (Student: {student.name})")
+
         session.commit()
 
 

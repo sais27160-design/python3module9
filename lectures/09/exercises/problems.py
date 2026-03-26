@@ -9,6 +9,9 @@ names -> references -> objects
 from __future__ import annotations
 
 from collections.abc import Callable
+import dis
+import gc
+import weakref
 
 
 def extract_opnames(source: str) -> list[str]:
@@ -26,8 +29,9 @@ def extract_opnames(source: str) -> list[str]:
         source = "x = 2 + 3\\nprint(x)"
         output shape: ["RESUME", "LOAD_CONST", ...]
     """
-    raise NotImplementedError
-
+    
+    compiled = compile(source, "<string>", "exec")
+    return [instr.opname for instr in dis.get_instructions(compiled)]
 
 def aliasing_after_append() -> tuple[list[int], list[int], bool]:
     """Mission 2: demonstrate aliasing (two names, one list object).
@@ -43,7 +47,11 @@ def aliasing_after_append() -> tuple[list[int], list[int], bool]:
     Return:
         (a, b, same_identity) where same_identity is `id(a) == id(b)`.
     """
-    raise NotImplementedError
+    a = [1, 2]
+    b = a   
+    b.append(3)
+    same_identity = id(a) == id(b)
+    return a, b, same_identity
 
 
 def copy_after_append() -> tuple[list[int], list[int], bool]:
@@ -60,7 +68,11 @@ def copy_after_append() -> tuple[list[int], list[int], bool]:
     Return:
         (a, b, same_identity) where same_identity should be False.
     """
-    raise NotImplementedError
+    a = [1, 2]
+    b = a.copy()   
+    b.append(3)
+    same_identity = id(a) == id(b)
+    return a, b, same_identity
 
 
 def rebind_after_concat() -> tuple[list[int], list[int], bool]:
@@ -78,7 +90,12 @@ def rebind_after_concat() -> tuple[list[int], list[int], bool]:
         (a, b, same_identity) with `a == [1, 2]`, `b == [1, 2, 3]`,
         and same_identity False.
     """
-    raise NotImplementedError
+    a = [1, 2]
+    b = a   
+    b = b + [3]  
+    same_identity = id(a) == id(b)
+    return a, b, same_identity
+
 
 
 def refcount_steps() -> tuple[int, int, int]:
@@ -96,7 +113,16 @@ def refcount_steps() -> tuple[int, int, int]:
         with_alias_count == start_count + 1
         after_delete_count == start_count
     """
-    raise NotImplementedError
+    import sys
+
+    obj = object()
+    start_count = sys.getrefcount(obj)
+    alias = obj
+    with_alias_count = sys.getrefcount(obj)
+    del alias
+    after_delete_count = sys.getrefcount(obj)
+
+    return start_count, with_alias_count, after_delete_count
 
 
 def make_incrementer(start: int = 0) -> Callable[[], int]:
@@ -112,7 +138,15 @@ def make_incrementer(start: int = 0) -> Callable[[], int]:
         inc() -> 11
         inc() -> 12
     """
-    raise NotImplementedError
+    value = start
+
+    def incrementer() -> int:
+        nonlocal value
+        value += 1
+        return value
+
+    return incrementer
+
 
 
 def inject_with_exec(namespace: dict[str, object], statement: str) -> dict[str, object]:
@@ -126,7 +160,8 @@ def inject_with_exec(namespace: dict[str, object], statement: str) -> dict[str, 
         inject_with_exec(ns, "x = 42")
         ns["x"] == 42
     """
-    raise NotImplementedError
+    exec(statement, namespace)
+    return namespace
 
 
 def function_locals_snapshot() -> dict[str, int]:
@@ -139,7 +174,12 @@ def function_locals_snapshot() -> dict[str, int]:
     Return `dict(locals())` from that inner function.
     Expected output shape: {"a": 10, "b": 20}
     """
-    raise NotImplementedError
+    def inner() -> dict[str, int]:
+        a = 10
+        b = 20
+        return dict(locals())
+
+    return inner()
 
 
 def cycle_collected() -> bool:
@@ -152,7 +192,21 @@ def cycle_collected() -> bool:
     Return:
         True only if both weak references are now None.
     """
-    raise NotImplementedError
+    class Node:
+        def __init__(self):
+            self.ref = None
+    a = Node()
+    b = Node()
+    a.ref = b
+    b.ref = a
+    
+    a_ref = weakref.ref(a)
+    b_ref = weakref.ref(b)
+    
+    del a,b
+    gc.collect()
+    
+    return a_ref() is None and b_ref() is None
 
 
 def shallow_vs_deep_copy_state() -> tuple[list[list[int]], list[list[int]], list[list[int]]]:
@@ -172,4 +226,11 @@ def shallow_vs_deep_copy_state() -> tuple[list[list[int]], list[list[int]], list
         shallow == [[1, 99], [2]]
         deep == [[1], [2]]
     """
-    raise NotImplementedError
+    from copy import deepcopy
+
+    original = [[1], [2]]
+    shallow = original.copy()
+    deep = deepcopy(original)
+    shallow[0].append(99)
+
+    return original, shallow, deep
