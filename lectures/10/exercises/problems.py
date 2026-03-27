@@ -9,7 +9,9 @@ Rules:
 from __future__ import annotations
 
 import asyncio
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 
 def simulated_long_fetch(value: object) -> object:
@@ -35,7 +37,19 @@ def locked_counter_total(num_threads: int, increments_per_thread: int) -> int:
     Expected result:
         num_threads * increments_per_thread
     """
-    raise NotImplementedError
+    counter = 0
+    lock = threading.Lock()
+    def worker():
+        nonlocal counter
+        for _ in range(increments_per_thread):
+            with lock:
+                counter += 1
+    threads = [threading.Thread(target=worker) for _ in range(num_threads)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    return counter
 
 
 def threaded_square_map(values: list[int]) -> list[int]:
@@ -51,7 +65,17 @@ def threaded_square_map(values: list[int]) -> list[int]:
     Example:
         [2, -3, 4] -> [4, 9, 16]
     """
-    raise NotImplementedError
+    result = [None] * len(values)
+    
+    def worker(i, value):
+        result[i] = value ** 2
+        
+    threads = [threading.Thread(target=worker, args=(i, value)) for i, value in enumerate(values)]
+    for thread in threads:
+        thread.start()  
+    for thread in threads:
+        thread.join()
+    return result
 
 
 def threadpool_sleep_map(delays: list[float], max_workers: int = 4) -> list[float]:
@@ -63,9 +87,16 @@ def threadpool_sleep_map(delays: list[float], max_workers: int = 4) -> list[floa
         - Preserve input order in returned list (for example via `executor.map`).
         - Raise `ValueError` if `max_workers < 1`.
     """
-    raise NotImplementedError
+    if max_workers < 1:
+        raise ValueError("max_workers must be at least 1")
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = list(executor.map(simulated_long_fetch, delays))
+    
+    return results
 
-
+def square(x):
+    return x * x
 def processpool_square_map(values: list[int], max_workers: int = 2) -> list[int]:
     """Mission 4: compute squares with `ProcessPoolExecutor`.
 
@@ -75,7 +106,13 @@ def processpool_square_map(values: list[int], max_workers: int = 2) -> list[int]
         - Return squared values in the same order as input.
         - Raise `ValueError` if `max_workers < 1`.
     """
-    raise NotImplementedError
+
+    if max_workers < 1:
+        raise ValueError("max_workers must be at least 1")
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        results = list(executor.map(square, values))
+    
+    return results
 
 
 async def async_tag_fetch(labels: list[str], delay: float = 0.01) -> list[str]:
@@ -91,7 +128,11 @@ async def async_tag_fetch(labels: list[str], delay: float = 0.01) -> list[str]:
         - Preserve output order by label position.
         - `delay` is kept for API compatibility; you do not need to use it.
     """
-    raise NotImplementedError
+    async def worker(label):
+        await async_simulated_long_fetch(label)
+        return f"done:{label}"
+
+    return await asyncio.gather(*[worker(label) for label in labels])
 
 
 async def async_blocking_double(values: list[int]) -> list[int]:
@@ -109,4 +150,8 @@ async def async_blocking_double(values: list[int]) -> list[int]:
 
         Example: [1, 2, 3] -> [2, 4, 6]
     """
-    raise NotImplementedError
+    async def worker(value):
+        result = await asyncio.to_thread(simulated_long_fetch, value)
+        return result * 2
+
+    return await asyncio.gather(*[worker(value) for value in values])
